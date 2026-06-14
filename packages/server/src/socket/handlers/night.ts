@@ -23,8 +23,10 @@ async function maybeAdvanceNight(io: Server, roomCode: string) {
 
   // Process night
   room.gameState.phase = 'processing_night'
+  const aliveBefore = new Set(room.players.filter((p) => p.isAlive).map((p) => p.id))
   const { events, updatedPlayers } = processNight(room)
   room.players = updatedPlayers
+  const newlyDead = updatedPlayers.filter((p) => !p.isAlive && aliveBefore.has(p.id))
   room.gameState.dayEvents = events
   room.gameState.phase = 'dawn'
   room.gameState.phaseStartedAt = Date.now()
@@ -55,6 +57,11 @@ async function maybeAdvanceNight(io: Server, roomCode: string) {
 
   await delay(GAME_CONSTANTS.DAWN_EVENT_DELAY_MS)
   io.to(roomCode).emit('dawn:complete')
+
+  // Notify clients of night deaths so they update the player list
+  for (const dead of newlyDead) {
+    io.to(roomCode).emit('day:eliminated', { player: { id: dead.id, name: dead.name, isAlive: false, isHost: dead.isHost, isSpectator: true }, role: dead.role, reason: 'night' })
+  }
 
   // Move to day_debate
   room.gameState.phase = 'day_debate'

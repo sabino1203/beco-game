@@ -4,7 +4,14 @@ import { useGameStore } from './gameStore.js'
 export function connectSocket() {
   const store = useGameStore.getState()
 
-  socket.on('connect', () => store.setConnected(true))
+  socket.on('connect', () => {
+    store.setConnected(true)
+    const sessionToken = localStorage.getItem('beco_session_token')
+    const roomCode = localStorage.getItem('beco_room_code')
+    if (sessionToken && roomCode) {
+      socket.emit('room:reconnect', { sessionToken, roomCode })
+    }
+  })
   socket.on('disconnect', () => store.setConnected(false))
 
   socket.on('room:created', ({ roomCode, sessionToken, playerId }: { roomCode: string; sessionToken: string; playerId: string }) => {
@@ -89,11 +96,4 @@ export function connectSocket() {
   })
 
   socket.connect()
-
-  // Attempt reconnection if tokens exist
-  const sessionToken = localStorage.getItem('beco_session_token')
-  const roomCode = localStorage.getItem('beco_room_code')
-  if (sessionToken && roomCode) {
-    socket.emit('room:reconnect', { sessionToken, roomCode })
-  }
 }
