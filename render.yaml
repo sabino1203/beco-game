@@ -1,0 +1,26 @@
+services:
+  - type: web
+    name: beco-server
+    runtime: node
+    region: oregon
+    plan: free
+    rootDir: .
+    buildCommand: npm install && npm run build -w packages/shared && npm run build -w packages/server
+    startCommand: node packages/server/dist/index.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3001
+      - key: REDIS_URL
+        fromService:
+          type: redis
+          name: beco-redis
+          property: connectionString
+      - key: CORS_ORIGIN
+        value: https://beco-game.vercel.app
+
+  - type: redis
+    name: beco-redis
+    plan: free
+    maxmemoryPolicy: allkeys-lru
