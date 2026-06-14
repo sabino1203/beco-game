@@ -24,3 +24,4 @@ services:
     name: beco-redis
     plan: free
     maxmemoryPolicy: allkeys-lru
+    ipAllowList: []
